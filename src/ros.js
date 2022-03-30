@@ -1,13 +1,12 @@
-import fetch from 'electron-fetch';
-import ROSLIB from 'roslib';
+const ROSLIB = require('roslib');
 
 document.addEventListener('DOMContentLoaded', event => {
     console.log("entro en la pagina")
 
-    botonConectar = document.getElementById("btn_con")
-    botonDesconectar = document.getElementById("btn_dis")
-    textoConexion = document.getElementById("estadoConexion")
-    estadoRos = document.getElementById("ros_state")
+    let botonConectar = document.getElementById("btn_con")
+    let botonDesconectar = document.getElementById("btn_dis")
+    let textoConexion = document.getElementById("estadoConexion")
+    let estadoRos = document.getElementById("ros_state")
 
     botonConectar.addEventListener("click", connect)
     botonDesconectar.addEventListener("click", disconnect)
@@ -16,7 +15,7 @@ document.addEventListener('DOMContentLoaded', event => {
     textoConexion.innerHTML = "Desconectado"
     textoConexion.style.color = "#FF0000"
 
-    data = {
+    let data = {
         // ros connection
         ros: null,
         rosbridge_address: 'ws://127.0.0.1:9090/',
@@ -35,6 +34,9 @@ document.addEventListener('DOMContentLoaded', event => {
         data.ros = new ROSLIB.Ros({
             url: data.rosbridge_address
         })
+        // .----------------------
+        postData();
+        // .----------------------
 
         cmdVel.ros = data.ros
 
@@ -51,23 +53,22 @@ document.addEventListener('DOMContentLoaded', event => {
                 "ros": "connected"
             }
             postData(confirmation)
-            estadoRos.innerHTML("Conexion con ROSBridge correcta")
+            estadoRos.innerHTML = "Conexion con ROSBridge correcta";
 
         })
         data.ros.on("data", (data) => {
-            estadoRos.innerHTML("Se ha recibido: " + data)
+            estadoRos.innerHTML = "Se ha recibido: " + data;
         })
         data.ros.on("error", (error) => {
             console.log("Se ha producido algun error mientras se intentaba realizar la conexion")
             console.log(error)
-            estadoRos.innerHTML("Se ha producido algun error mientras se intentaba realizar la conexion: " + error)
+            estadoRos.innerHTML = "Se ha producido algun error mientras se intentaba realizar la conexion: " + error;
         })
         data.ros.on("close", () => {
             data.connected = false
             console.log("Conexion con ROSBridge cerrada")
-            estadoRos.innerHTML("Conexion con ROSBridge cerrada")
+            estadoRos.innerHTML = "Conexion con ROSBridge cerrada";
         })
-
 
         odom.subscribe(function (message) {
             console.log(message);
@@ -86,17 +87,25 @@ document.addEventListener('DOMContentLoaded', event => {
 
 });
 
-function postData(data) {
-    // fetch post
-    fetch('http://localhost:8080/hampo/post/data', {
-        method: 'POST',
+function postData() {
+    const url = 'https://hamponator-web-default-rtdb.europe-west1.firebasedatabase.app/time.json';
+    var settings = {
+        method: "PUT",
         headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({"name":"hampo"})
+    };
+
+    // write a fetch pu using url and settings
+    fetch(url, settings)
+    .then(response => {
+        return response.json();
     })
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(error => console.error(error))
+    .then(response => {
+        console.log(response);
+    })
+    .catch(error => {
+        console.log(error);
+    });
 }

@@ -24,6 +24,9 @@
   "dependencies": {
     "electron-fetch": "^1.7.4",
     "electron-firebase": "^1.2.0",
-    "roslib": "^1.2.0"
+    "fetch-to-curl": "^0.5.2",
+    "firebase": "^9.6.10",
+    "roslib": "^1.2.0",
+    "xyz": "^4.0.0"
   }
 }

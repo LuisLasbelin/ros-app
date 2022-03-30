@@ -3,12 +3,11 @@
   <head>
     <meta charset="UTF-8">
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+    <meta http-equiv="Content-Security-Policy" content="default-src https://*; script-src 'self'; style-src 'self' 'unsafe-inline'">
     <link href="styles/styles.css" rel="stylesheet">
     <link rel="stylesheet" href="styles/bootstrap.min.css">
     <script src="main.js" type="module"></script>
     <script src="src/ros.js" type="module"></script>
-    <script src="src/firebase.js" type="module"></script>
     <title>ROS connection app</title>
   </head>
   <body class="d-flex flex-column h-100">
