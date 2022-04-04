@@ -63,11 +63,13 @@ document.addEventListener('DOMContentLoaded', event => {
             console.log("Se ha producido algun error mientras se intentaba realizar la conexion")
             console.log(error)
             estadoRos.innerHTML = "Se ha producido algun error mientras se intentaba realizar la conexion: " + error;
+            disconnect();
         })
         data.ros.on("close", () => {
             data.connected = false
             console.log("Conexion con ROSBridge cerrada")
             estadoRos.innerHTML = "Conexion con ROSBridge cerrada";
+            disconnect();
         })
 
         odom.subscribe(function (message) {
