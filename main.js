@@ -5,14 +5,16 @@ function createWindow () {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
-    height: 600,
+    height: 480,
+    frame: false, // no window frame
     webPreferences: {
       nodeIntegration: true, 
       contextIsolation: false, // protect against prototype pollution
       preload: './preload.js' // preload script
     }
   })
-  //mainWindow.menuBarVisible = false;
+  mainWindow.menuBarVisible = false;
+  mainWindow.resizable = false;
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
 

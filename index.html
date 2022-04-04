@@ -3,53 +3,35 @@
   <head>
     <meta charset="UTF-8">
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta http-equiv="Content-Security-Policy" content="default-src https://*; script-src 'self'; style-src 'self' 'unsafe-inline'">
-    <link href="styles/styles.css" rel="stylesheet">
+    <meta http-equiv="Content-Security-Policy" content="default-src https://*; script-src 'self'; style-src 'self'; img-src *;">
     <link rel="stylesheet" href="styles/bootstrap.min.css">
+    <link href="styles/styles.css" rel="stylesheet">
     <script src="main.js" type="module"></script>
     <script src="src/ros.js" type="module"></script>
     <title>ROS connection app</title>
   </head>
-  <body class="d-flex flex-column h-100">
-    <!-- header of the page -->
-    <header class="header">
-        <div class="container">
-            <div class="jumbotron text-center">
-                <h1>Hello ROS</h1>
-                <p>Let's connect our website to ROS</p>
-            </div>
-        </div>
-    </header>
-
-    <!-- main content -->
-    <main>
-        <div class="container">
-            <div class="row">
-                <div class="col-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h3 class="text-center">Menu</h3>
-                            <p id="ros_state">ROS state</p>
-                            <hr>
-                            <br>
-                            <div id="estadoConexion">Desconectado</div>
-                            <button class="mt-2 btn btn-success" id="btn_con">Conectar</button>
-                            <button class="mt-2 btn btn-danger"
-                            id="btn_dis">Desconectar</button>
-                        </div>
+  <body>
+    <!-- Write a bootstrap layout with two columns-->
+    <div class="container">
+        <div class="row">
+                <div class="col bg-light vertical-shadow">
+                    <div id="ros-connection-status">
+                        <h4 class="">ROS</h4>
+                        <p>ROS connection is <strong>established</strong>.</p>
+                    </div>
+                    <div id="ros-connection-status">
+                        <div id="estado_conexion">Desconectado</div>
+                        <button class="mt-2 btn btn-success" id="btn_con">Conectar</button>
+                        <button class="mt-2 btn btn-danger" id="btn_dis">Desconectar</button>
+                        <p id="ros_state">ROS state</p>
+                        <h3>Connection status: <strong id='status'></strong></h3>
                     </div>
                 </div>
-            </div>
-            <h3>Connection status: <strong id='status'></strong></h3>
-        </div>
-    </main>
-
-    <!-- footer -->
-    <footer class="footer mt-auto bg-dark text-light">
-        <div class="container">
-            <h5>page ends here!</h5>
-        </div>
-    </footer>
+                <div class="col-9">
+                    <canvas id="map_canvas"></canvas>
+                </div>
+        </div> <!-- end of row -->
+    </div>
     <script src="./renderer.js"></script>
 </body>
 </html>
