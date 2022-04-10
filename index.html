@@ -14,17 +14,25 @@
     <!-- Write a bootstrap layout with two columns-->
     <div class="container">
         <div class="row">
-                <div class="col bg-light vertical-shadow">
-                    <div id="ros-connection-status">
-                        <h4 class="">ROS</h4>
-                        <p>ROS connection is <strong>established</strong>.</p>
+                <div class="col bg-light">
+                    <div id="column-status-title">
+                        <div class="text-center">ROS console</div>
                     </div>
-                    <div id="ros-connection-status">
-                        <div id="estado_conexion">Desconectado</div>
+                    <div id="column-status">
+                        <div>Internet <svg height="22" width="22"><ellipse cx="11" cy="11"
+                        rx="11" ry="11" class="circle-red"
+                        id="internet_status"></ellipse></svg>
+                        </div>
+                        <div>Robot <svg height="22" width="22"><ellipse cx="11" cy="11"
+                            rx="11" ry="11" class="circle-red" id="robot_status"></ellipse></svg>
+                        </div>
+                        <div>Firebase <svg height="22" width="22"><ellipse cx="11" cy="11"
+                        rx="11" ry="11" class="circle-green" id="firebase_status"></ellipse></svg>
+                        </div>
+                        <div>Mapa <svg height="22" width="22"><ellipse cx="11" cy="11"
+                            rx="11" ry="11" class="circle-green" id="map_status"></ellipse></svg>
+                        </div>
                         <button class="mt-2 btn btn-success" id="btn_con">Conectar</button>
-                        <button class="mt-2 btn btn-danger" id="btn_dis">Desconectar</button>
-                        <p id="ros_state">ROS state</p>
-                        <h3>Connection status: <strong id='status'></strong></h3>
                     </div>
                 </div>
                 <div class="col-9">

@@ -1,4 +1,5 @@
 const ROSLIB = require('roslib');
+const {createUrl, postData} = import('./router_msgs.js');
 
 document.addEventListener('DOMContentLoaded', event => {
     console.log("entro en la pagina")
@@ -14,28 +15,20 @@ document.addEventListener('DOMContentLoaded', event => {
 
     // BOTONES
     let botonConectar = document.getElementById("btn_con")
-    let botonDesconectar = document.getElementById("btn_dis")
-    let textoConexion = document.getElementById("estado_conexion")
-    let estadoRos = document.getElementById("ros_state")
     
     botonConectar.addEventListener("click", connect)
-    botonDesconectar.addEventListener("click", disconnect)
 
-    botonDesconectar.disabled = true
-    textoConexion.innerHTML = "Desconectado"
-    textoConexion.style.color = "#FF0000"
-
-    let data = {
+    var data = {
         // ros connection
         ros: null,
-        rosbridge_address: 'ws://127.0.0.1:9090/',
+        rosbridge_address: 'ws://192.168.0.62:9090/',
         connected: false,
     }
 
-    var cmdVel = new ROSLIB.Topic({
+    var odom = new ROSLIB.Topic({
         ros: null,
-        name: '/goal_pose',
-        messageType: 'geometry_msgs/msg/PoseStamped'
+        name: '/waypoints',
+        messageType: 'visualization_msgs/msg/MarkerArray'
     });
 
     function connect() {
@@ -45,15 +38,8 @@ document.addEventListener('DOMContentLoaded', event => {
             url: data.rosbridge_address
         })
         // .----------------------
-        postData();
+        // postData();
         // .----------------------
-
-        cmdVel.ros = data.ros
-
-        botonDesconectar.disabled = false
-        botonConectar.disabled = true
-        textoConexion.innerHTML = "Conectado"
-        textoConexion.style.color = "#00FF00"
 
         // Define callbacks
         data.ros.on("connection", () => {
@@ -62,17 +48,19 @@ document.addEventListener('DOMContentLoaded', event => {
             const confirmation = {
                 "ros": "connected"
             }
-            postData(confirmation)
-            estadoRos.innerHTML = "Conexion con ROSBridge correcta";
+            postData("hampo", confirmation)
 
+            estadoRos('ok')
+            botones('connect')
         })
         data.ros.on("data", (data) => {
-            estadoRos.innerHTML = "Se ha recibido: " + data;
+            estadoRos('data')
+            console.log("Se ha recibido: " + data);
         })
         data.ros.on("error", (error) => {
             console.log("Se ha producido algun error mientras se intentaba realizar la conexion")
             console.log(error)
-            estadoRos.innerHTML = "Se ha producido algun error mientras se intentaba realizar la conexion: " + error;
+            estadoRos('error')
             disconnect();
         })
         data.ros.on("close", () => {
@@ -90,55 +78,68 @@ document.addEventListener('DOMContentLoaded', event => {
     function disconnect() {
         data.ros.close()
         data.connected = false
-        console.log('Clic en botón de desconexión')
-        botonDesconectar.disabled = true
-        botonConectar.disabled = false
-        textoConexion.innerHTML = "Desconectado"
-        textoConexion.style.color = "#FF0000"
+        console.log('Click en botón de desconexión')
+        botones('disconnect')
+    }
+
+    function botones(orden) {
+        let botonConectar = document.getElementById("btn_con")
+        switch (orden) {
+            case 'disconnect':
+                botonConectar.removeEventListener("click", disconnect)
+                botonConectar.addEventListener("click", connect)
+                botonConectar.classList.remove('btn-danger')
+                botonConectar.classList.add('btn-success')
+                break;
+            case 'connect':
+                botonConectar.removeEventListener("click", connect)
+                botonConectar.addEventListener("click", disconnect)
+                botonConectar.classList.remove('btn-success')
+                botonConectar.classList.add('btn-danger')
+                break;
+            default:
+                break;
+        }
     }
 
 });
 
 /**
- * POST DATA
- * Sends data to the API
- * data:* -> f() -> data:json 
+ * ESTADO ROS
+ *
+ * Establece el estado del boton segun la orden enviada.
  * 
- * @param {Object} data - data to be sent
+ * orden:string -> f() 
+ * 
+ * @param {string} orden 'ok' or 'data' or 'error'
  */
-function postData(data) {
-    const url = 'https://hamponator-web-default-rtdb.europe-west1.firebasedatabase.app/time.json';
-    var settings = {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-    };
-
-    // write a fetch pu using url and settings
-    fetch(url, settings)
-    .then(response => {
-        return response.json();
-    })
-    .then(response => {
-        console.log(response);
-    })
-    .catch(error => {
-        console.log(error);
-    });
+function estadoRos(orden) {
+    let estado_ros = document.getElementById("robot_status")
+    switch (orden) {
+        case 'ok':
+            estado_ros.classList.remove('circle-red');
+            estado_ros.classList.remove('circle-yellow');
+            estado_ros.classList.add('circle-green');
+            break;
+        case 'data':
+            estado_ros.classList.remove('circle-red');
+            estado_ros.classList.remove('circle-green');
+            estado_ros.classList.add('circle-yellow');
+            break;
+        case 'error':
+            estado_ros.classList.remove('circle-green');
+            estado_ros.classList.remove('circle-yellow');
+            estado_ros.classList.add('circle-red');
+            break;
+        default:
+            break;
+    }
 }
 
-// https://stackoverflow.com/questions/23104582/scaling-an-image-to-fit-on-canvas
 function drawImageScaled(img, ctx) {
-    var canvas = ctx.canvas ;
-    var hRatio = canvas.width  / img.width    ;
-    var vRatio =  canvas.height / img.height  ;
-    var ratio  = Math.min ( hRatio, vRatio );
-    var centerShift_x = ( canvas.width - img.width*ratio ) / 2;
-    var centerShift_y = ( canvas.height - img.height*ratio ) / 2;  
-    ctx.clearRect(0,0,canvas.width, canvas.height);
-    ctx.drawImage(img, 0,0, img.width, img.height,
-                       centerShift_x, centerShift_y,
-                       img.width*ratio, img.height*ratio);  
- }
+    let canvas = ctx.canvas;
+    let aspectWidth = canvas.width / img.width;
+    let aspectHeight = canvas.height / img.height;
+
+    ctx.drawImage(img, 0, 0, img.width * aspectWidth, img.height * aspectHeight);
+}
