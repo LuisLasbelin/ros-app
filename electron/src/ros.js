@@ -1,32 +1,34 @@
-import fetch from 'electron-fetch';
-import ROSLIB from 'roslib';
+const ROSLIB = require('roslib');
+const {createUrl, postData} = import('./router_msgs.js');
 
 document.addEventListener('DOMContentLoaded', event => {
     console.log("entro en la pagina")
 
-    botonConectar = document.getElementById("btn_con")
-    botonDesconectar = document.getElementById("btn_dis")
-    textoConexion = document.getElementById("estadoConexion")
-    estadoRos = document.getElementById("ros_state")
+    // CANVAS
+    let mapCanvas = document.getElementById("map_canvas")
+    let ctx = mapCanvas.getContext("2d");
+    var img = new Image();
+    img.onload = function() {
+        drawImageScaled(img, ctx)
+    };
+    img.src = 'img/my_map.jpg';
 
+    // BOTONES
+    let botonConectar = document.getElementById("btn_con")
+    
     botonConectar.addEventListener("click", connect)
-    botonDesconectar.addEventListener("click", disconnect)
 
-    botonDesconectar.disabled = true
-    textoConexion.innerHTML = "Desconectado"
-    textoConexion.style.color = "#FF0000"
-
-    data = {
+    var data = {
         // ros connection
         ros: null,
-        rosbridge_address: 'ws://127.0.0.1:9090/',
+        rosbridge_address: 'ws://192.168.0.62:9090/',
         connected: false,
     }
 
-    var cmdVel = new ROSLIB.Topic({
+    var odom = new ROSLIB.Topic({
         ros: null,
-        name: '/goal_pose',
-        messageType: 'geometry_msgs/msg/PoseStamped'
+        name: '/waypoints',
+        messageType: 'visualization_msgs/msg/MarkerArray'
     });
 
     function connect() {
@@ -35,13 +37,9 @@ document.addEventListener('DOMContentLoaded', event => {
         data.ros = new ROSLIB.Ros({
             url: data.rosbridge_address
         })
-
-        cmdVel.ros = data.ros
-
-        botonDesconectar.disabled = false
-        botonConectar.disabled = true
-        textoConexion.innerHTML = "Conectado"
-        textoConexion.style.color = "#00FF00"
+        // .----------------------
+        // postData();
+        // .----------------------
 
         // Define callbacks
         data.ros.on("connection", () => {
@@ -50,24 +48,27 @@ document.addEventListener('DOMContentLoaded', event => {
             const confirmation = {
                 "ros": "connected"
             }
-            postData(confirmation)
-            estadoRos.innerHTML("Conexion con ROSBridge correcta")
+            postData("hampo", confirmation)
 
+            estadoRos('ok')
+            botones('connect')
         })
         data.ros.on("data", (data) => {
-            estadoRos.innerHTML("Se ha recibido: " + data)
+            estadoRos('data')
+            console.log("Se ha recibido: " + data);
         })
         data.ros.on("error", (error) => {
             console.log("Se ha producido algun error mientras se intentaba realizar la conexion")
             console.log(error)
-            estadoRos.innerHTML("Se ha producido algun error mientras se intentaba realizar la conexion: " + error)
+            estadoRos('error')
+            disconnect();
         })
         data.ros.on("close", () => {
             data.connected = false
             console.log("Conexion con ROSBridge cerrada")
-            estadoRos.innerHTML("Conexion con ROSBridge cerrada")
+            estadoRos.innerHTML = "Conexion con ROSBridge cerrada";
+            disconnect();
         })
-
 
         odom.subscribe(function (message) {
             console.log(message);
@@ -77,26 +78,68 @@ document.addEventListener('DOMContentLoaded', event => {
     function disconnect() {
         data.ros.close()
         data.connected = false
-        console.log('Clic en botón de desconexión')
-        botonDesconectar.disabled = true
-        botonConectar.disabled = false
-        textoConexion.innerHTML = "Desconectado"
-        textoConexion.style.color = "#FF0000"
+        console.log('Click en botón de desconexión')
+        botones('disconnect')
+    }
+
+    function botones(orden) {
+        let botonConectar = document.getElementById("btn_con")
+        switch (orden) {
+            case 'disconnect':
+                botonConectar.removeEventListener("click", disconnect)
+                botonConectar.addEventListener("click", connect)
+                botonConectar.classList.remove('btn-danger')
+                botonConectar.classList.add('btn-success')
+                break;
+            case 'connect':
+                botonConectar.removeEventListener("click", connect)
+                botonConectar.addEventListener("click", disconnect)
+                botonConectar.classList.remove('btn-success')
+                botonConectar.classList.add('btn-danger')
+                break;
+            default:
+                break;
+        }
     }
 
 });
 
-function postData(data) {
-    // fetch post
-    fetch('http://localhost:8080/hampo/post/data', {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(error => console.error(error))
+/**
+ * ESTADO ROS
+ *
+ * Establece el estado del boton segun la orden enviada.
+ * 
+ * orden:string -> f() 
+ * 
+ * @param {string} orden 'ok' or 'data' or 'error'
+ */
+function estadoRos(orden) {
+    let estado_ros = document.getElementById("robot_status")
+    switch (orden) {
+        case 'ok':
+            estado_ros.classList.remove('circle-red');
+            estado_ros.classList.remove('circle-yellow');
+            estado_ros.classList.add('circle-green');
+            break;
+        case 'data':
+            estado_ros.classList.remove('circle-red');
+            estado_ros.classList.remove('circle-green');
+            estado_ros.classList.add('circle-yellow');
+            break;
+        case 'error':
+            estado_ros.classList.remove('circle-green');
+            estado_ros.classList.remove('circle-yellow');
+            estado_ros.classList.add('circle-red');
+            break;
+        default:
+            break;
+    }
+}
+
+function drawImageScaled(img, ctx) {
+    let canvas = ctx.canvas;
+    let aspectWidth = canvas.width / img.width;
+    let aspectHeight = canvas.height / img.height;
+
+    ctx.drawImage(img, 0, 0, img.width * aspectWidth, img.height * aspectHeight);
 }

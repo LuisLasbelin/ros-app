@@ -5,10 +5,17 @@
 // selectively enable features needed in the rendering
 // process.
 const updateOnlineStatus = () => {
-    document.getElementById('status').innerHTML = navigator.onLine ? 'online' : 'offline'
+  let status = document.getElementById('internet_status');
+  if(navigator.onLine) {
+      status.classList.remove('circle-red');
+      status.classList.add('circle-green');
+  } else {
+      status.classList.remove('circle-green');
+      status.classList.add('circle-red');
   }
-  
-  window.addEventListener('online', updateOnlineStatus)
-  window.addEventListener('offline', updateOnlineStatus)
-  
-  updateOnlineStatus()
+}
+
+document.addEventListener('online', updateOnlineStatus)
+document.addEventListener('offline', updateOnlineStatus)
+
+updateOnlineStatus()
