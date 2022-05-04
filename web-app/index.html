@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src https://*; connect-src
+    *; script-src 'self'; style-src 'self'; img-src *;">
+    <link rel="stylesheet" href="styles/bootstrap.min.css">
+    <link href="styles/styles.css" rel="stylesheet">
+    <script src="node_modules/roslib/build/roslib.js"></script>
+    <script src="src/ros.js" type="module"></script>
+    <title>ROS connection app</title>
+  </head>
+  <body>
+    <!-- Write a bootstrap layout with two columns-->
+    <div class="container">
+        <div class="row">
+                <div class="col bg-light">
+                    <div id="column-status-title">
+                        <div class="text-center">ROS console</div>
+                    </div>
+                    <div id="column-status">
+                        <div>Internet <svg height="22" width="22"><ellipse cx="11" cy="11"
+                        rx="11" ry="11" class="circle-red"
+                        id="internet_status"></ellipse></svg>
+                        </div>
+                        <div>Robot <svg height="22" width="22"><ellipse cx="11" cy="11"
+                            rx="11" ry="11" class="circle-red" id="robot_status"></ellipse></svg>
+                        </div>
+                        <div>Firebase <svg height="22" width="22"><ellipse cx="11" cy="11"
+                        rx="11" ry="11" class="circle-green" id="firebase_status"></ellipse></svg>
+                        </div>
+                        <div>Mapa <svg height="22" width="22"><ellipse cx="11" cy="11"
+                            rx="11" ry="11" class="circle-green" id="map_status"></ellipse></svg>
+                        </div>
+
+                        <input type="text" name="idSlot" id="idSlot">
+                        
+                        <button class="mt-2 btn btn-success"
+                        id="btn_con">Conectar</button>
+                        <p id="ros_status"></p>
+                    </div>
+                </div>
+                <div class="col-9">
+                    <canvas id="map_canvas"></canvas>
+                </div>
+        </div> <!-- end of row -->
+    </div>
+</body>
+</html>
