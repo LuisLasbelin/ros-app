@@ -12,7 +12,7 @@
     height: 100vh;
 }
 
-.col {
+.col-high {
     height: 100vh;
     padding: 0;
 }
@@ -41,7 +41,6 @@
 }
 
 input {
-    width: 100%;
     border: 1px solid #ccc;
     background-color: white;
     color: grey;
