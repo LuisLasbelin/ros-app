@@ -1,3 +1,5 @@
+
+
 # ros-app
 
 This is an electron application to connect to a ROS2 environement and to a Firebase
@@ -7,15 +9,20 @@ RTDatabase to post and get data from a hosted page.
 
 To clone and run this repository you'll need [Git](https://git-scm.com) and [Node.js](https://nodejs.org/en/download/) (which comes with [npm](http://npmjs.com)) installed on your computer. From your command line:
 
+Note web-app is the node version. *electron* is a standalone version that might be unstable.
+
+### 
 ```bash
 # Clone this repository
 git clone https://github.com/Luistorch/ros-app
 # Go into the repository
 cd ros-app
+# Go into the node version
+cd web-app
 # Install dependencies
 npm install
-# Run the app
-npm start
+# Then you can run it from a python server or an Apache localhost for example
+python -m https.server
 ```
 
 Note: If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.

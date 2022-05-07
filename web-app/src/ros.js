@@ -1,24 +1,28 @@
 document.addEventListener('DOMContentLoaded', event => {
     console.log("entro en la pagina")
 
-    var botonConectar = document.getElementById("btn_con")
-    // var botonDesconectar = document.getElementById("btn_dis")
-    var textoConexion = document.getElementById("estadoConexion")
-    var estadoRos = document.getElementById("ros_status")
+    /* Imagen del canvas */
+    let mapStatus = document.getElementById("map-status");
+    let canvas = document.getElementById("map-canvas");
+    let ctx = canvas.getContext("2d");
+    let image = new Image();
+    image.src = "img/my_map.jpg";
+    image.onload = function(){
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        
+        /* Activar circulo */
+        mapStatus.classList.add("circle-green");
+        mapStatus.classList.remove("circle-red");
+    }
+
+    /* BOTONES */
+    var botonConectar = document.getElementById("btn-con")
+    var estadoRos = document.getElementById("ros-status")
 
     botonConectar.addEventListener("click", connect)
-    
-    /*
-    botonDesconectar.addEventListener("click", disconnect)
 
-    botonDesconectar.disabled = true
-    textoConexion.innerHTML = "Desconectado"
-    textoConexion.style.color = "#FF0000"
-
-    */
-
+    /* ROS CONNECTION */
     var data = {
-        // ros connection
         ros: null,
         rosbridge_address: 'ws://127.0.0.1:9090/',
         connected: false,
@@ -42,13 +46,6 @@ document.addEventListener('DOMContentLoaded', event => {
         })
 
         cmdVel.ros = data.ros
-
-        /*
-        botonDesconectar.disabled = false
-        botonConectar.disabled = true
-        textoConexion.innerHTML = "Conectado"
-        textoConexion.style.color = "#00FF00"
-        */
 
         // Define callbacks
         data.ros.on("connection", () => {
