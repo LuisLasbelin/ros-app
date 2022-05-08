@@ -25,7 +25,11 @@ document.addEventListener('DOMContentLoaded', event => {
     // Enviar datos a firebase
     var botonEnviar = document.getElementById("btn-send")
     // Asigna la funcion senData al boton de enviar
-    botonEnviar.addEventListener("click", sendData)
+    botonEnviar.addEventListener("click", sendROSData)
+    // Recoger datos de firebase
+    var botonDescargar = document.getElementById("btn-fetch")
+    // Asigna la funcion senData al boton de enviar
+    botonDescargar.addEventListener("click", fetchROSData)
 
 
     var idSlot = 0;
@@ -86,8 +90,8 @@ document.addEventListener('DOMContentLoaded', event => {
     /**
      * Crea el objeto de datos para enviar a Firebase
      */
-    function sendData() {
-        console.log("Clic en sendData")
+    function sendROSData() {
+        console.log("Clic en sendROSData")
 
         idSlot = document.getElementById("id-slot").value; // string
         
@@ -103,6 +107,25 @@ document.addEventListener('DOMContentLoaded', event => {
         document.cookie = "ros_id=" + idSlot + ";";
 
         putData(idSlot, msg);
+    }
+
+    function fetchROSData() {
+
+        // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
+        document.cookie = "ros_id=" + idSlot + ";";
+        
+        var requestOptions = {
+            method: 'GET',
+            redirect: 'follow'
+          };
+        
+        fetch(Constants.url + `${idSlot}-web.json`, requestOptions)
+        .then(response => response.json())
+        .then(result => {
+            console.log(result);
+            return result;
+        })
+        .catch(error => console.log('error', error));
     }
 
     function disconnect() {
@@ -135,7 +158,7 @@ function putData(idSlot, data) {
     };
 
     fetch(Constants.url + `${idSlot}-app.json`, requestOptions)
-    .then(response => response.text())
+    .then(response => response.json())
     .then(result => {
         console.log(result);
         return result;
@@ -172,5 +195,3 @@ function getCookie(cname) {
     }
     return "";
 }
-
-module.exports =  putData
