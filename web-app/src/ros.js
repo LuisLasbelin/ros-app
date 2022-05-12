@@ -37,6 +37,8 @@ let destino_y = 0
 let checkpoints = []
 let checkpoint_actual = 0
 
+let dibujar_disponible = true
+
 document.addEventListener('DOMContentLoaded', event => {
     console.log("entro en la pagina")
 
@@ -49,13 +51,32 @@ document.addEventListener('DOMContentLoaded', event => {
     // Cambiar esta parte para meter otra imagen
     image.src = "img/my_map.jpg";
     // -------------------------------------------
-    image.onload = function() {
+    image.onload = function () {
         drawImageScaled(image, ctx)
-        
+
         /* Activar circulo */
         mapStatus.classList.add("circle-green");
         mapStatus.classList.remove("circle-red");
     }
+    /**
+     * Dibuja en el mapa la trayectoria seguida por el robot
+     */
+    function dibujar() {
+        if (dibujar_disponible) {
+            dibujar_disponible = false
+            setTimeout(function () {
+                dibujar_disponible = true
+                let pos = relativePosRobot(robos_x, robos_y, ctx.canvas)
+                //console.log(pos)
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 60, 0, 2 * Math.PI);
+
+                ctx.stroke();
+
+            }, 300)
+        }
+    }
+
 
     /* BOTONES */
     // Conectar a ROS
@@ -128,10 +149,10 @@ document.addEventListener('DOMContentLoaded', event => {
         console.log("Clic en sendROSData")
 
         idSlot = document.getElementById("id-slot").value; // string
-        
+
         let msg = {
             time: new Date().getTime(),
-            connection_data: conn_data,
+            connection_data: data,
             msg: []
         }
 
@@ -151,40 +172,44 @@ document.addEventListener('DOMContentLoaded', event => {
         // TODO: mostrar que se ha desconectado cambiado el circulo de color y cambiando
         // de boton desconectar a conectar
     }
+    /**
+     * Obtiene datos desde firebase
+     */
+    function fetchROSData() {
+
+        // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
+        document.cookie = "ros_id=" + idSlot + ";";
+
+        var requestOptions = {
+            method: 'GET',
+            redirect: 'follow'
+        };
+
+        fetch(Constants.url + `${idSlot}-web.json`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                console.log(result);
+                try {
+                    // Toma los valores del mensaje
+                    destino_x = result.msg[0].posiciones[0].x;
+                    destino_y = result.msg[0].posiciones[0].y;
+                    // Crea el mensaje goal pose recibido desde Firebase
+                    var mensaje = generarMensajeGoalPose(destino_x, destino_y)
+                    console.log(mensaje)
+                    goal_pose.publish(mensaje);
+                    // Inicia la ruta
+                    //nextCheckpoint();
+                } catch (error) {
+                    console.error(error);
+                }
+            })
+            .catch(error => console.error(error));
+    }
 });
 
-/**
- * Obtiene datos desde firebase
- */
-function fetchROSData() {
 
-    // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
-    document.cookie = "ros_id=" + idSlot + ";";
-    
-    var requestOptions = {
-        method: 'GET',
-        redirect: 'follow'
-    };
-    
-    fetch(Constants.url + `${idSlot}-web.json`, requestOptions)
-    .then(response => response.json())
-    .then(result => {
-        console.log(result);
-        try {
-            // Toma los valores del mensaje
-            destino_x = result.msg[0].pose.position.x;
-            destino_y = result.msg[0].pose.position.y;
-            // Crea el mensaje goal pose recibido desde Firebase
-            var mensaje = generarMensajeGoalPose(destino_x,destino_y)
-            goal_pose.publish(mensaje);
-            // Inicia la ruta
-            nextCheckpoint();
-        } catch (error) {
-            console.error(error);
-        }
-    })
-    .catch(error => console.error(error));
-}
+
+
 
 /**
  * Publica datos en firebase
@@ -194,23 +219,23 @@ function fetchROSData() {
 function putData(idSlot, data) {
     let myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
-    
+
     let raw = JSON.stringify(data);
 
     let requestOptions = {
-    method: 'PUT',
-    headers: myHeaders,
-    body: raw,
-    redirect: 'follow'
+        method: 'PUT',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow'
     };
 
     fetch(Constants.url + `${idSlot}-app.json`, requestOptions)
-    .then(response => response.json())
-    .then(result => {
-        console.log(result);
-        return result;
-    })
-    .catch(error => console.log('error', error));
+        .then(response => response.json())
+        .then(result => {
+            console.log(result);
+            return result;
+        })
+        .catch(error => console.log('error', error));
 }
 
 /**
@@ -231,13 +256,13 @@ function checkCookies() {
 function getCookie(cname) {
     let name = cname + "=";
     let ca = document.cookie.split(';');
-    for(let i = 0; i < ca.length; i++) {
+    for (let i = 0; i < ca.length; i++) {
         let c = ca[i];
         while (c.charAt(0) == ' ') {
-        c = c.substring(1);
+            c = c.substring(1);
         }
         if (c.indexOf(name) == 0) {
-        return c.substring(name.length, c.length);
+            return c.substring(name.length, c.length);
         }
     }
     return "";
@@ -303,22 +328,22 @@ function nextCheckpoint() {
 }
 
 /**
- * Dibuja en el mapa la trayectoria seguida por el robot
+ * 
+ * @param {*} px 
+ * @param {*} py 
+ * @param {*} element 
+ * @returns 
  */
-function dibujar() {
-    if (dibujar_disponible) {
-        dibujar_disponible = false
-        setTimeout(function () {
-            dibujar_disponible = true
-            pos = relativePosRobot(robos_x, robos_y, ctx.canvas)
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, 1, 0, 2 * Math.PI);
+function relativePosRobot(px, py, element) {
+    var rect = element.getBoundingClientRect();
 
-            ctx.stroke();
-
-        }, 300)
-    }
+    return {
+        x: Math.floor(px * rect.width / 11.5),
+        y: Math.floor(py * rect.height / 9.5)
+    };
 }
+
+
 
 /**
  * Se llama cuando el goal pose ha sido alcanzado
