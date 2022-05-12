@@ -153,6 +153,9 @@ document.addEventListener('DOMContentLoaded', event => {
     }
 });
 
+/**
+ * Obtiene datos desde firebase
+ */
 function fetchROSData() {
 
     // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
@@ -161,19 +164,26 @@ function fetchROSData() {
     var requestOptions = {
         method: 'GET',
         redirect: 'follow'
-      };
+    };
     
     fetch(Constants.url + `${idSlot}-web.json`, requestOptions)
     .then(response => response.json())
     .then(result => {
         console.log(result);
-        // Crea el mensaje goal pose recibido desde Firebase
-        var mensaje = generarMensajeGoalPose(destino_x,destino_y)
-        goal_pose.publish(mensaje);
-        // Inicia la ruta
-        nextCheckpoint();
+        try {
+            // Toma los valores del mensaje
+            destino_x = result.msg[0].pose.position.x;
+            destino_y = result.msg[0].pose.position.y;
+            // Crea el mensaje goal pose recibido desde Firebase
+            var mensaje = generarMensajeGoalPose(destino_x,destino_y)
+            goal_pose.publish(mensaje);
+            // Inicia la ruta
+            nextCheckpoint();
+        } catch (error) {
+            console.error(error);
+        }
     })
-    .catch(error => console.log('error', error));
+    .catch(error => console.error(error));
 }
 
 /**
