@@ -27,6 +27,13 @@ var odom = new ROSLIB.Topic({
     messageType: 'nav_msgs/msg/Odometry'
 });
 
+// DOCS: http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/Image.html
+var camera = new ROSLIB.Topic({
+    ros: null,
+    name: '/camera/image_raw',
+    messageType: 'sensor_msgs/msg/Image'
+})
+
 //---------ROBOS-----------
 let robos_x = 0
 let robos_y = 0
@@ -119,26 +126,40 @@ document.addEventListener('DOMContentLoaded', event => {
             //console.log(message)
             dibujar()
         });
+        // Dibuja en el canvas la imagen recibida por el topic
+        camera.subscribe(function (message) {
+            //console.log(message)
+            //console.log(message.data)
+            let data = message.data
+            let image = new Image();
+            image.src = "data:image/jpeg;base64," + data;
+            image.onload = function () {
+                let canvas = document.getElementById("map-canvas");
+                let ctx = canvas.getContext("2d");
+                ctx.drawImage(image, 0, 0);
+            }
+        });
     }
 
     /**
      * Crea el objeto de datos para enviar a Firebase
      */
-    function sendROSData() {
+    function sendROSData(data) {
         console.log("Clic en sendROSData")
 
         idSlot = document.getElementById("id-slot").value; // string
         
-        let msg = {
+        let jsonMsg = {
             time: new Date().getTime(),
             connection_data: conn_data,
             msg: []
         }
+        jsonMsg.msg.push(data);
 
         // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
         document.cookie = "ros_id=" + idSlot + ";";
 
-        putData(idSlot, msg);
+        putData(idSlot, jsonMsg);
     }
 
     /**
@@ -335,11 +356,27 @@ function destinoAlcanzado(x, y) {
         }
 
         // TODO: mostrar destino alcanzado
+        
+        // TODO: Si el punto requiere una foto, la envia a firebase
+        guardarFoto();
 
     } else {
         // TODO: mostrar en camino
 
         //console.log(robos_x,destino_x)
         //console.log(robos_y,destino_y)
+    }
+}
+
+/**
+ * Guarda la imagen actual en el canvas
+ */
+function guardarFoto() {
+    let imagen = document.getElementById("map-canvas").getContext().ImageData;
+    if (imagen != "") {
+        let data = {
+            img: imagen
+        }
+        sendROSData(data);
     }
 }
