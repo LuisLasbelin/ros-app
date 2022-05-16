@@ -31,11 +31,16 @@ var odom = new ROSLIB.Topic({
 let robos_x = 0
 let robos_y = 0
 
+let limite_mapa_x = 2.3
+let limite_mapa_y = 1.9
+
 let destino_x = 0
 let destino_y = 0
 
 let checkpoints = []
 let checkpoint_actual = 0
+let seguir = true
+let tiempo_espera = 300
 
 let dibujar_disponible = true
 
@@ -49,7 +54,7 @@ document.addEventListener('DOMContentLoaded', event => {
     let image = new Image();
     // -------------------------------------------
     // Cambiar esta parte para meter otra imagen
-    image.src = "img/my_map.jpg";
+    image.src = "img/my_map.png";
     // -------------------------------------------
     image.onload = function () {
         drawImageScaled(image, ctx)
@@ -69,7 +74,7 @@ document.addEventListener('DOMContentLoaded', event => {
                 let pos = relativePosRobot(robos_x, robos_y, ctx.canvas)
                 //console.log(pos)
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 60, 0, 2 * Math.PI);
+                ctx.arc(pos.x, pos.y, 6, 0, 2 * Math.PI);
 
                 ctx.stroke();
 
@@ -190,15 +195,38 @@ document.addEventListener('DOMContentLoaded', event => {
             .then(result => {
                 console.log(result);
                 try {
+                    result.msg.forEach(element => {
+                        //console.log(element.tipo)
+                        if (element.tipo == "ruta") {
+                            element.posiciones.forEach(pos => {
+                                pos.tipo = "ruta"
+                                pos.z = 0.0
+                                checkpoints.push(pos)
+                            });
+                        } else if (element.tipo == "foto") {
+                            let pos = {}
+                            pos.x = element.posicion.x
+                            pos.y = element.posicion.y
+
+                            let z = Math.atan(element.orientacion.y - element.posicion.y, element.orientacion.x - element.posicion.x)
+                            pos.z = z
+                            pos.tipo = "foto"
+                            checkpoints.push(pos)
+                        }
+
+                    });
+
+                    console.log(checkpoints)
+                    seguir = true
                     // Toma los valores del mensaje
-                    destino_x = result.msg[0].posiciones[0].x;
-                    destino_y = result.msg[0].posiciones[0].y;
+                    //destino_x = result.msg[0].posiciones[0].x;
+                    //destino_y = result.msg[0].posiciones[0].y;
                     // Crea el mensaje goal pose recibido desde Firebase
-                    var mensaje = generarMensajeGoalPose(destino_x, destino_y)
-                    console.log(mensaje)
-                    goal_pose.publish(mensaje);
+                    //var mensaje = generarMensajeGoalPose(destino_x/100*1.9, destino_y/100*2.1)
+                    //console.log(mensaje)
+                    //goal_pose.publish(mensaje);
                     // Inicia la ruta
-                    //nextCheckpoint();
+                    nextCheckpoint();
                 } catch (error) {
                     console.error(error);
                 }
@@ -291,7 +319,7 @@ function drawImageScaled(img, ctx) {
  * @param {num} y posicion objetivo
  * @returns ROSLIB.Message
  */
-function generarMensajeGoalPose(x, y) {
+function generarMensajeGoalPose(x, y, z) {
     let mensaje = new ROSLIB.Message({
         header: {
             stamp: {
@@ -309,7 +337,7 @@ function generarMensajeGoalPose(x, y) {
             orientation: {
                 x: 0.0,
                 y: 0.0,
-                z: 0.0,
+                z: z,
                 w: 0.8
             }
         }
@@ -320,11 +348,12 @@ function generarMensajeGoalPose(x, y) {
 
 function nextCheckpoint() {
     setTimeout(function () {
-        let checkpoint = checkpoints[checkpoint_actual]
-        destinoAlcanzado(checkpoint[0], checkpoint[1])
-        goal_pose.publish(generarMensajeGoalPose(checkpoint[0], checkpoint[1]))
-        nextCheckpoint()
-    }, 300)
+        if (seguir) {
+            let checkpoint = checkpoints[checkpoint_actual]
+            destinoAlcanzado(checkpoint)
+            nextCheckpoint()
+        }
+    }, tiempo_espera)
 }
 
 /**
@@ -338,8 +367,8 @@ function relativePosRobot(px, py, element) {
     var rect = element.getBoundingClientRect();
 
     return {
-        x: Math.floor(px * rect.width / 11.5),
-        y: Math.floor(py * rect.height / 9.5)
+        x: Math.floor(px * rect.width / limite_mapa_x),
+        y: Math.floor(py * rect.height / limite_mapa_y)
     };
 }
 
@@ -350,21 +379,37 @@ function relativePosRobot(px, py, element) {
  * @param {*} x 
  * @param {*} y 
  */
-function destinoAlcanzado(x, y) {
+function destinoAlcanzado(checkpoint) {
 
-    if (Math.abs(robos_x - x) < 0.3 && Math.abs(robos_y - y) < 0.3) {
-        //console.log("destino")
-        checkpoint_actual++
-        if (checkpoint_actual >= checkpoints.length) {
-            checkpoint_actual = 0
-        }
-
-        // TODO: mostrar destino alcanzado
-
-    } else {
-        // TODO: mostrar en camino
-
-        //console.log(robos_x,destino_x)
-        //console.log(robos_y,destino_y)
+    if (checkpoint_actual >= checkpoints.length) {
+        console.log("fin")
+        seguir = false
+        checkpoints = []
+        checkpoint_actual = 0
+        return
     }
+    console.log(checkpoint)
+    console.log(checkpoint_actual)
+
+    if (checkpoint.tipo == "ruta") {
+        tiempo_espera = 300
+        destino_x = checkpoint.x/100*limite_mapa_x
+        destino_y = checkpoint.y/100*limite_mapa_y
+        console.log(robos_x,robos_y)
+
+        console.log(destino_x,destino_y)
+        if (Math.abs(robos_x - destino_x) < 0.4 && Math.abs(robos_y - destino_y) < 0.4) {
+            checkpoint_actual++
+        } else {
+            goal_pose.publish(generarMensajeGoalPose(destino_x,destino_y,checkpoint.z))
+            console.log("llegadisimo")
+            //checkpoint_actual++
+        }
+    } else if (checkpoint.tipo == "foto") {
+        console.log("foto")
+        tiempo_espera = 2000
+        checkpoint_actual++
+    }
+
+
 }
