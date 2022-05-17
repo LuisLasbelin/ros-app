@@ -5,10 +5,8 @@
 // robot
 // -------------------------------------------------------
 
-import Constants from './constants.js';
-
 //---------ROS-----------
-let data = {
+let conn_data = {
     // ros connection
     ros: null,
     rosbridge_address: 'ws://127.0.0.1:9090/',
@@ -98,11 +96,11 @@ document.addEventListener('DOMContentLoaded', event => {
     // Enviar datos a firebase
     var botonEnviar = document.getElementById("btn-send")
     // Asigna la funcion senData al boton de enviar
-    botonEnviar.addEventListener("click", sendROSData)
+    botonEnviar.addEventListener("click", sendRosData)
     // Recoger datos de firebase
     var botonDescargar = document.getElementById("btn-fetch")
     // Asigna la funcion senData al boton de enviar
-    botonDescargar.addEventListener("click", fetchROSData)
+    botonDescargar.addEventListener("click", fetchRosData)
 
     // Se asigna cuando se usa, se guarda aqui como global para poder usarla en las funciones
     var idSlot = 0;
@@ -116,33 +114,33 @@ document.addEventListener('DOMContentLoaded', event => {
     function connect() {
         console.log("Clic en connect")
 
-        data.ros = new ROSLIB.Ros({
-            url: data.rosbridge_address
+        conn_data.ros = new ROSLIB.Ros({
+            url: conn_data.rosbridge_address
         })
 
-        goal_pose.ros = data.ros
-        odom.ros = data.ros
+        goal_pose.ros = conn_data.ros
+        odom.ros = conn_data.ros
 
         // TODO: mostrar que se ha conectado cambiado el circulo de color y cambiando de
         // boton conectar a desconectar
 
         // Define callbacks
-        data.ros.on("connection", () => {
-            data.connected = true
+        conn_data.ros.on("connection", () => {
+            conn_data.connected = true
             //mover()
             console.log("Conexion con ROSBridge correcta")
 
         })
-        data.ros.on("data", (data) => {
-            console.log("Se ha producido algun data")
-            console.log(data)
+        conn_data.ros.on("data", (result) => {
+            console.log("Se ha producido algun result")
+            console.log(result)
         })
-        data.ros.on("error", (error) => {
+        conn_data.ros.on("error", (error) => {
             console.log("Se ha producido algun error mientras se intentaba realizar la conexion")
             console.log(error)
         })
-        data.ros.on("close", () => {
-            data.connected = false
+        conn_data.ros.on("close", () => {
+            conn_data.connected = false
             console.log("Conexion con ROSBridge cerrada")
         })
 
@@ -150,15 +148,15 @@ document.addEventListener('DOMContentLoaded', event => {
             robos_x = message.pose.pose.position.x
             robos_y = message.pose.pose.position.y
             //console.log(message)
-            dibujar()
+            dibujar();
         });
         // Dibuja en el canvas la imagen recibida por el topic
         camera.subscribe(function (message) {
             //console.log(message)
             //console.log(message.data)
-            let data = message.data
+            let msg_data = message.data
             let image = new Image();
-            image.src = "data:image/jpeg;base64," + data;
+            image.src = "data:image/jpeg;base64," + msg_data;
             image.onload = function () {
                 let canvas = document.getElementById("map-canvas");
                 let ctx = canvas.getContext("2d");
@@ -170,7 +168,7 @@ document.addEventListener('DOMContentLoaded', event => {
     /**
      * Crea el objeto de datos para enviar a Firebase
      */
-    function sendROSData(data) {
+    function sendRosData(data_send) {
         console.log("Clic en sendROSData")
 
         idSlot = document.getElementById("id-slot").value; // string
@@ -180,14 +178,13 @@ document.addEventListener('DOMContentLoaded', event => {
             connection_data: data,
             msg: []
         }
-        jsonMsg.msg.push(data);
+        jsonMsg.msg.push(data_send);
 
         // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
         document.cookie = "ros_id=" + idSlot + ";";
 
         putData(idSlot, jsonMsg);
     }
-
     /**
      * Se desconecta del Robot
      */
@@ -256,82 +253,31 @@ document.addEventListener('DOMContentLoaded', event => {
     }
 });
 
+    function fetchRosData() {
+        console.log("Clic en fetchROSData")
 
+        idSlot = document.getElementById("id-slot").value; // string
 
+        // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
+        document.cookie = "ros_id=" + idSlot + ";";
 
-
-/**
- * Publica datos en firebase
- * @param {string} idSlot 
- * @param {json} data 
- */
-function putData(idSlot, data) {
-    let myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-
-    let raw = JSON.stringify(data);
-
-    let requestOptions = {
-        method: 'PUT',
-        headers: myHeaders,
-        body: raw,
-        redirect: 'follow'
-    };
-
-    fetch(Constants.url + `${idSlot}-app.json`, requestOptions)
-        .then(response => response.json())
-        .then(result => {
-            console.log(result);
-            return result;
-        })
-        .catch(error => console.log('error', error));
-}
-
-/**
- * Comprueba si existen las cookies necesarias de este documento, no es modular
- */
-function checkCookies() {
-    let idSlotCookie = getCookie("ros_id");
-    if (idSlotCookie != "") {
-        document.getElementById("id-slot").value = idSlotCookie;
+        fetchData(idSlot, startMovement);
     }
-}
+});
 
-/**
- * Devuelve una cookie si existe segun su nombre
- * @param {string} cname de cookie
- * @returns cookie value or ""
- */
-function getCookie(cname) {
-    let name = cname + "=";
-    let ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
-        }
-    }
-    return "";
-}
 
-/**
- * Dibuja una imagen escalada en un canvas
- * @param {*} img image to draw
- * @param {*} ctx canvas context
- */
-function drawImageScaled(img, ctx) {
-    var canvas = ctx.canvas;
-    var hRatio = canvas.width / img.width;
-    var vRatio = canvas.height / img.height;
-    var ratio = Math.min(hRatio, vRatio);
-    var centerShift_x = (canvas.width - img.width * ratio) / 2;
-    var centerShift_y = (canvas.height - img.height * ratio) / 2;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, img.width, img.height,
-        centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+// FINAL DOM CONTENT LOADED
+
+function startMovement(jsonData) {
+
+    // Toma los valores del mensaje
+    destino_x = jsonData.msg[0].pose.position.x;
+    destino_y = jsonData.msg[0].pose.position.y;
+    // Crea el mensaje goal pose recibido desde Firebase
+    var mensaje = generarMensajeGoalPose(destino_x,destino_y)
+    goal_pose.publish(mensaje);
+    // Inicia la ruta
+    nextCheckpoint();
 }
 
 /**
@@ -442,9 +388,9 @@ function destinoAlcanzado(checkpoint) {
 function guardarFoto() {
     let imagen = document.getElementById("map-canvas").getContext().ImageData;
     if (imagen != "") {
-        let data = {
-            img: imagen
+        let msg_data = {
+            image: imagen
         }
-        sendROSData(data);
+        sendROSData(msg_data);
     }
 }
