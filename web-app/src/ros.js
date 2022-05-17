@@ -32,6 +32,8 @@ var camera = new ROSLIB.Topic({
     messageType: 'sensor_msgs/msg/Image'
 })
 
+var imagen_camara = null;
+
 //---------ROBOS-----------
 let robos_x = 0
 let robos_y = 0
@@ -158,9 +160,7 @@ document.addEventListener('DOMContentLoaded', event => {
             let image = new Image();
             image.src = "data:image/jpeg;base64," + msg_data;
             image.onload = function () {
-                let canvas = document.getElementById("map-canvas");
-                let ctx = canvas.getContext("2d");
-                ctx.drawImage(image, 0, 0);
+                imagen_camara = image;
             }
         });
     }
@@ -251,7 +251,6 @@ document.addEventListener('DOMContentLoaded', event => {
             })
             .catch(error => console.error(error));
     }
-});
 
     function fetchRosData() {
         console.log("Clic en fetchROSData")
@@ -386,10 +385,9 @@ function destinoAlcanzado(checkpoint) {
  * Guarda la imagen actual en el canvas
  */
 function guardarFoto() {
-    let imagen = document.getElementById("map-canvas").getContext().ImageData;
-    if (imagen != "") {
+    if (imagen_camara != null) {
         let msg_data = {
-            image: imagen
+            image: imagen_camara
         }
         sendROSData(msg_data);
     }
