@@ -167,41 +167,10 @@ document.addEventListener('DOMContentLoaded', event => {
             }
         });
     }
-
-    /**
-     * Crea el objeto de datos para enviar a Firebase
-     */
-    function sendRosData(data_send) {
-        console.log("Clic en sendROSData")
-
-        idSlot = document.getElementById("id-slot").value; // string
-
-        let jsonMsg = {
-            time: new Date().getTime(),
-            connection_data: conn_data,
-            msg: []
-        }
-        jsonMsg.msg.push(data_send);
-
-        // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
-        document.cookie = "ros_id=" + idSlot + ";";
-
-        putData(idSlot, jsonMsg, firebaseStatus);
-    }
-    /**
-     * Se desconecta del Robot
-     */
-    function disconnect() {
-        data.ros.close()
-        data.connected = false
-        console.log('Clic en botón de desconexión')
-        // TODO: mostrar que se ha desconectado cambiado el circulo de color y cambiando
-        // de boton desconectar a conectar
-    }
     /**
      * Obtiene datos desde firebase
      */
-    function fetchROSData() {
+    function fetchRosData() {
 
         // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
         document.cookie = "ros_id=" + idSlot + ";";
@@ -253,17 +222,6 @@ document.addEventListener('DOMContentLoaded', event => {
                 }
             })
             .catch(error => console.error(error));
-    }
-
-    function fetchRosData() {
-        console.log("Clic en fetchROSData")
-
-        idSlot = document.getElementById("id-slot").value; // string
-
-        // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
-        document.cookie = "ros_id=" + idSlot + ";";
-
-        fetchData(idSlot, startMovement);
     }
 });
 
@@ -381,6 +339,11 @@ function destinoAlcanzado(checkpoint) {
         guardarFoto();
         // TODO: mostrar destino alcanzado
     }
+
+    // Si es el ultimo checkpoint envia las fotos a firebase
+    if (checkpoint_actual == checkpoints.length - 1) {
+        sendRosData(images_data);
+    }
 }
 
 /**
@@ -392,24 +355,27 @@ function guardarFoto() {
             images: []
         }
         images_data.images.push(imagen_camara);
-        sendROSData(msg_data);
     }
 }
-
 
 /**
- * Modifica el circulo de estado cuando hay errores o no en una conexion a firebase
- * @param {string} estado: 1 OK, -1 ERROR
+ * Crea el objeto de datos para enviar a Firebase
  */
-function firebaseStatus(status) {
-    let firebaseStatus = document.getElementById("firebase-status");
-    // OK
-    if(status == 1) {
-        firebaseStatus.classList.add("circle-green");
-        firebaseStatus.classList.remove("circle-red");
-        return;
+function sendRosData(data_send) {
+    console.log("Clic en sendROSData")
+
+    idSlot = document.getElementById("id-slot").value; // string
+
+    let jsonMsg = {
+        time: new Date().getTime(),
+        connection_data: conn_data,
+        msg: []
     }
-    // ERROR
-    firebaseStatus.classList.add("circle-red");
-    firebaseStatus.classList.remove("circle-green");
+    jsonMsg.msg.push(data_send);
+
+    // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
+    document.cookie = "ros_id=" + idSlot + ";";
+
+    putData(idSlot, jsonMsg);
 }
+
