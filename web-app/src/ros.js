@@ -36,11 +36,18 @@ var camera = new ROSLIB.Topic({
 let robos_x = 0
 let robos_y = 0
 
+let limite_mapa_x = 2.3
+let limite_mapa_y = 1.9
+
 let destino_x = 0
 let destino_y = 0
 
 let checkpoints = []
 let checkpoint_actual = 0
+let seguir = true
+let tiempo_espera = 300
+
+let dibujar_disponible = true
 
 document.addEventListener('DOMContentLoaded', event => {
     console.log("entro en la pagina")
@@ -52,15 +59,34 @@ document.addEventListener('DOMContentLoaded', event => {
     let image = new Image();
     // -------------------------------------------
     // Cambiar esta parte para meter otra imagen
-    image.src = "img/my_map.jpg";
+    image.src = "img/my_map.png";
     // -------------------------------------------
-    image.onload = function() {
+    image.onload = function () {
         drawImageScaled(image, ctx)
-        
+
         /* Activar circulo */
         mapStatus.classList.add("circle-green");
         mapStatus.classList.remove("circle-red");
     }
+    /**
+     * Dibuja en el mapa la trayectoria seguida por el robot
+     */
+    function dibujar() {
+        if (dibujar_disponible) {
+            dibujar_disponible = false
+            setTimeout(function () {
+                dibujar_disponible = true
+                let pos = relativePosRobot(robos_x, robos_y, ctx.canvas)
+                //console.log(pos)
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 6, 0, 2 * Math.PI);
+
+                ctx.stroke();
+
+            }, 300)
+        }
+    }
+
 
     /* BOTONES */
     // Conectar a ROS
@@ -146,10 +172,10 @@ document.addEventListener('DOMContentLoaded', event => {
         console.log("Clic en sendROSData")
 
         idSlot = document.getElementById("id-slot").value; // string
-        
+
         let jsonMsg = {
             time: new Date().getTime(),
-            connection_data: conn_data,
+            connection_data: data,
             msg: []
         }
         jsonMsg.msg.push(data_send);
@@ -159,6 +185,73 @@ document.addEventListener('DOMContentLoaded', event => {
 
         putData(idSlot, jsonMsg);
     }
+    /**
+     * Se desconecta del Robot
+     */
+    function disconnect() {
+        data.ros.close()
+        data.connected = false
+        console.log('Clic en botón de desconexión')
+        // TODO: mostrar que se ha desconectado cambiado el circulo de color y cambiando
+        // de boton desconectar a conectar
+    }
+    /**
+     * Obtiene datos desde firebase
+     */
+    function fetchROSData() {
+
+        // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
+        document.cookie = "ros_id=" + idSlot + ";";
+
+        var requestOptions = {
+            method: 'GET',
+            redirect: 'follow'
+        };
+
+        fetch(Constants.url + `${idSlot}-web.json`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                console.log(result);
+                try {
+                    result.msg.forEach(element => {
+                        //console.log(element.tipo)
+                        if (element.tipo == "ruta") {
+                            element.posiciones.forEach(pos => {
+                                pos.tipo = "ruta"
+                                pos.z = 0.0
+                                checkpoints.push(pos)
+                            });
+                        } else if (element.tipo == "foto") {
+                            let pos = {}
+                            pos.x = element.posicion.x
+                            pos.y = element.posicion.y
+
+                            let z = Math.atan(element.orientacion.y - element.posicion.y, element.orientacion.x - element.posicion.x)
+                            pos.z = z
+                            pos.tipo = "foto"
+                            checkpoints.push(pos)
+                        }
+
+                    });
+
+                    console.log(checkpoints)
+                    seguir = true
+                    // Toma los valores del mensaje
+                    //destino_x = result.msg[0].posiciones[0].x;
+                    //destino_y = result.msg[0].posiciones[0].y;
+                    // Crea el mensaje goal pose recibido desde Firebase
+                    //var mensaje = generarMensajeGoalPose(destino_x/100*1.9, destino_y/100*2.1)
+                    //console.log(mensaje)
+                    //goal_pose.publish(mensaje);
+                    // Inicia la ruta
+                    nextCheckpoint();
+                } catch (error) {
+                    console.error(error);
+                }
+            })
+            .catch(error => console.error(error));
+    }
+});
 
     function fetchRosData() {
         console.log("Clic en fetchROSData")
@@ -171,6 +264,7 @@ document.addEventListener('DOMContentLoaded', event => {
         fetchData(idSlot, startMovement);
     }
 });
+
 
 // FINAL DOM CONTENT LOADED
 
@@ -192,7 +286,7 @@ function startMovement(jsonData) {
  * @param {num} y posicion objetivo
  * @returns ROSLIB.Message
  */
-function generarMensajeGoalPose(x, y) {
+function generarMensajeGoalPose(x, y, z) {
     let mensaje = new ROSLIB.Message({
         header: {
             stamp: {
@@ -210,7 +304,7 @@ function generarMensajeGoalPose(x, y) {
             orientation: {
                 x: 0.0,
                 y: 0.0,
-                z: 0.0,
+                z: z,
                 w: 0.8
             }
         }
@@ -220,55 +314,71 @@ function generarMensajeGoalPose(x, y) {
 }
 
 function nextCheckpoint() {
-    setInterval(function () {
-        let checkpoint = checkpoints[checkpoint_actual]
-        destinoAlcanzado(checkpoint[0], checkpoint[1])
-        goal_pose.publish(generarMensajeGoalPose(checkpoint[0], checkpoint[1]))
-    }, 300)
+    setTimeout(function () {
+        if (seguir) {
+            let checkpoint = checkpoints[checkpoint_actual]
+            destinoAlcanzado(checkpoint)
+            nextCheckpoint()
+        }
+    }, tiempo_espera)
 }
 
 /**
- * Dibuja en el mapa la trayectoria seguida por el robot
+ * 
+ * @param {*} px 
+ * @param {*} py 
+ * @param {*} element 
+ * @returns 
  */
-function dibujar() {
-    if (dibujar_disponible) {
-        dibujar_disponible = false
-        setTimeout(function () {
-            dibujar_disponible = true
-            pos = relativePosRobot(robos_x, robos_y, ctx.canvas)
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, 1, 0, 2 * Math.PI);
+function relativePosRobot(px, py, element) {
+    var rect = element.getBoundingClientRect();
 
-            ctx.stroke();
-
-        }, 300)
-    }
+    return {
+        x: Math.floor(px * rect.width / limite_mapa_x),
+        y: Math.floor(py * rect.height / limite_mapa_y)
+    };
 }
+
+
 
 /**
  * Se llama cuando el goal pose ha sido alcanzado
  * @param {*} x 
  * @param {*} y 
  */
-function destinoAlcanzado(x, y) {
+function destinoAlcanzado(checkpoint) {
 
-    if (Math.abs(robos_x - x) < 0.3 && Math.abs(robos_y - y) < 0.3) {
-        //console.log("destino")
-        checkpoint_actual++
-        if (checkpoint_actual >= checkpoints.length) {
-            checkpoint_actual = 0
+    if (checkpoint_actual >= checkpoints.length) {
+        console.log("fin")
+        seguir = false
+        checkpoints = []
+        checkpoint_actual = 0
+        return
+    }
+    console.log(checkpoint)
+    console.log(checkpoint_actual)
+
+    if (checkpoint.tipo == "ruta") {
+        tiempo_espera = 300
+        destino_x = checkpoint.x / 100 * limite_mapa_x
+        destino_y = checkpoint.y / 100 * limite_mapa_y
+
+        console.log(robos_x, robos_y)
+        console.log(destino_x, destino_y)
+        if (Math.abs(robos_x - destino_x) < 0.4 && Math.abs(robos_y - destino_y) < 0.4) {
+            checkpoint_actual++
+        } else {
+            goal_pose.publish(generarMensajeGoalPose(destino_x, destino_y, checkpoint.z))
+            console.log("llegadisimo")
+            //checkpoint_actual++
         }
-
+    } else if (checkpoint.tipo == "foto") {
+        console.log("foto")
+        tiempo_espera = 2000
+        checkpoint_actual++
+        guardarFoto();
         // TODO: mostrar destino alcanzado
         
-        // TODO: Si el punto requiere una foto, la envia a firebase
-        guardarFoto();
-
-    } else {
-        // TODO: mostrar en camino
-
-        //console.log(robos_x,destino_x)
-        //console.log(robos_y,destino_y)
     }
 }
 
