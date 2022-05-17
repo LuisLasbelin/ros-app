@@ -27,6 +27,13 @@ var odom = new ROSLIB.Topic({
     messageType: 'nav_msgs/msg/Odometry'
 });
 
+// DOCS: http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/Image.html
+var camera = new ROSLIB.Topic({
+    ros: null,
+    name: '/camera/image_raw',
+    messageType: 'sensor_msgs/msg/Image'
+})
+
 //---------ROBOS-----------
 let robos_x = 0
 let robos_y = 0
@@ -145,26 +152,40 @@ document.addEventListener('DOMContentLoaded', event => {
             //console.log(message)
             dibujar()
         });
+        // Dibuja en el canvas la imagen recibida por el topic
+        camera.subscribe(function (message) {
+            //console.log(message)
+            //console.log(message.data)
+            let data = message.data
+            let image = new Image();
+            image.src = "data:image/jpeg;base64," + data;
+            image.onload = function () {
+                let canvas = document.getElementById("map-canvas");
+                let ctx = canvas.getContext("2d");
+                ctx.drawImage(image, 0, 0);
+            }
+        });
     }
 
     /**
      * Crea el objeto de datos para enviar a Firebase
      */
-    function sendROSData() {
+    function sendROSData(data) {
         console.log("Clic en sendROSData")
 
         idSlot = document.getElementById("id-slot").value; // string
 
-        let msg = {
+        let jsonMsg = {
             time: new Date().getTime(),
             connection_data: data,
             msg: []
         }
+        jsonMsg.msg.push(data);
 
         // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
         document.cookie = "ros_id=" + idSlot + ";";
 
-        putData(idSlot, msg);
+        putData(idSlot, jsonMsg);
     }
 
     /**
@@ -393,15 +414,15 @@ function destinoAlcanzado(checkpoint) {
 
     if (checkpoint.tipo == "ruta") {
         tiempo_espera = 300
-        destino_x = checkpoint.x/100*limite_mapa_x
-        destino_y = checkpoint.y/100*limite_mapa_y
+        destino_x = checkpoint.x / 100 * limite_mapa_x
+        destino_y = checkpoint.y / 100 * limite_mapa_y
 
-        console.log(robos_x,robos_y)
-        console.log(destino_x,destino_y)
+        console.log(robos_x, robos_y)
+        console.log(destino_x, destino_y)
         if (Math.abs(robos_x - destino_x) < 0.4 && Math.abs(robos_y - destino_y) < 0.4) {
             checkpoint_actual++
         } else {
-            goal_pose.publish(generarMensajeGoalPose(destino_x,destino_y,checkpoint.z))
+            goal_pose.publish(generarMensajeGoalPose(destino_x, destino_y, checkpoint.z))
             console.log("llegadisimo")
             //checkpoint_actual++
         }
@@ -409,7 +430,21 @@ function destinoAlcanzado(checkpoint) {
         console.log("foto")
         tiempo_espera = 2000
         checkpoint_actual++
+        guardarFoto();
+        // TODO: mostrar destino alcanzado
+        
     }
+}
 
-
+/**
+ * Guarda la imagen actual en el canvas
+ */
+function guardarFoto() {
+    let imagen = document.getElementById("map-canvas").getContext().ImageData;
+    if (imagen != "") {
+        let data = {
+            img: imagen
+        }
+        sendROSData(data);
+    }
 }
