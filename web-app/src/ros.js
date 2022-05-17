@@ -10,7 +10,7 @@ let conn_data = {
     // ros connection
     ros: null,
     rosbridge_address: 'ws://127.0.0.1:9090/',
-    connected: false,
+    connected: false
 }
 
 //---------TOPICS-----------
@@ -336,7 +336,7 @@ function destinoAlcanzado(checkpoint) {
         console.log("foto")
         tiempo_espera = 2000
         checkpoint_actual++
-        guardarFoto();
+        guardarFoto(imagen_camara);
         // TODO: mostrar destino alcanzado
     }
 
@@ -349,12 +349,21 @@ function destinoAlcanzado(checkpoint) {
 /**
  * Guarda la imagen actual en el canvas
  */
-function guardarFoto() {
-    if (imagen_camara != null) {
+function guardarFoto(img) {   
+    let canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+    canvas.src = img;
+    canvas.width = image.width;
+    canvas.height = image.height;
+    context.drawImage(this, 0, 0);
+    var dataURL = canvas.toDataURL('image/png');
+    imagen_url = dataURL;
+
+    if (imagen_url != null) {
         images_data = {
             images: []
         }
-        images_data.images.push(imagen_camara);
+        images_data.images.push(imagen_url);
     }
 }
 
