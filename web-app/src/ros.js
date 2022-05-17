@@ -395,8 +395,8 @@ function destinoAlcanzado(checkpoint) {
         tiempo_espera = 300
         destino_x = checkpoint.x/100*limite_mapa_x
         destino_y = checkpoint.y/100*limite_mapa_y
-        console.log(robos_x,robos_y)
 
+        console.log(robos_x,robos_y)
         console.log(destino_x,destino_y)
         if (Math.abs(robos_x - destino_x) < 0.4 && Math.abs(robos_y - destino_y) < 0.4) {
             checkpoint_actual++
