@@ -31,7 +31,7 @@ async function fetchData(idSlot, callback) {
  * @param {string} idSlot 
  * @param {json} data 
  */
-function putData(idSlot, data) {
+function putData(idSlot, data, callbackStatus) {
     let myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     
@@ -48,7 +48,8 @@ function putData(idSlot, data) {
     .then(response => response.json())
     .then(result => {
         console.log(result);
+        callbackStatus(1);
         return result;
     })
-    .catch(error => console.log('error', error));
+    .catch(error => callbackStatus(-1));
 }

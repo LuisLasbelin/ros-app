@@ -32,7 +32,10 @@ var camera = new ROSLIB.Topic({
     messageType: 'sensor_msgs/msg/Image'
 })
 
+// Guarda la imagen actual de la camara
 var imagen_camara = null;
+// Guarda las imagenes hasta que termine la ruta y las envia al final
+var images_data = {};
 
 //---------ROBOS-----------
 let robos_x = 0
@@ -175,7 +178,7 @@ document.addEventListener('DOMContentLoaded', event => {
 
         let jsonMsg = {
             time: new Date().getTime(),
-            connection_data: data,
+            connection_data: conn_data,
             msg: []
         }
         jsonMsg.msg.push(data_send);
@@ -183,7 +186,7 @@ document.addEventListener('DOMContentLoaded', event => {
         // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
         document.cookie = "ros_id=" + idSlot + ";";
 
-        putData(idSlot, jsonMsg);
+        putData(idSlot, jsonMsg, firebaseStatus);
     }
     /**
      * Se desconecta del Robot
@@ -377,7 +380,6 @@ function destinoAlcanzado(checkpoint) {
         checkpoint_actual++
         guardarFoto();
         // TODO: mostrar destino alcanzado
-        
     }
 }
 
@@ -386,9 +388,28 @@ function destinoAlcanzado(checkpoint) {
  */
 function guardarFoto() {
     if (imagen_camara != null) {
-        let msg_data = {
-            image: imagen_camara
+        images_data = {
+            images: []
         }
+        images_data.images.push(imagen_camara);
         sendROSData(msg_data);
     }
+}
+
+
+/**
+ * Modifica el circulo de estado cuando hay errores o no en una conexion a firebase
+ * @param {string} estado: 1 OK, -1 ERROR
+ */
+function firebaseStatus(status) {
+    let firebaseStatus = document.getElementById("firebase-status");
+    // OK
+    if(status == 1) {
+        firebaseStatus.classList.add("circle-green");
+        firebaseStatus.classList.remove("circle-red");
+        return;
+    }
+    // ERROR
+    firebaseStatus.classList.add("circle-red");
+    firebaseStatus.classList.remove("circle-green");
 }
