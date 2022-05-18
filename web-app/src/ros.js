@@ -34,6 +34,7 @@ var camera = new ROSLIB.Topic({
 
 // Guarda la imagen actual de la camara
 var imagen_camara = null;
+var imagen_anterior = null;
 // Guarda las imagenes hasta que termine la ruta y las envia al final
 var images_data = {};
 
@@ -158,13 +159,25 @@ document.addEventListener('DOMContentLoaded', event => {
         });
         // Dibuja en el canvas la imagen recibida por el topic
         camera.subscribe(function (message) {
-            console.log(message)
+
             //console.log(message.data)
-            let msg_data = message.data
-            let image = new Image();
-            image.src = "data:image/jpeg;base64," + msg_data;
+            let msg_data = message.data;
+            // msg_data es un array de bytes
+            let arr = new Uint8ClampedArray(msg_data.length);
+            let image = new ImageData(arr, 480);
+            image.data = arr;
+            //console.log(msg_data)
+            // Iterate through every pixel
+            for (let i = 0; i < image.data.length; i += 4) {
+                image.data[i] = msg_data[i]
+                image.data[i+1] = msg_data[i+1]
+                image.data[i+2] = msg_data[i+2]
+                image.data[i+3] = 255;
+            }
+            ctx.putImageData(image,0,0)
+            //console.log(image)
             image.onload = function () {
-                imagen_camara = image;
+                imagen_canvas = image;
             }
         });
     }
@@ -181,7 +194,7 @@ document.addEventListener('DOMContentLoaded', event => {
             redirect: 'follow'
         };
 
-        fetch(Constants.url + `${idSlot}-web.json`, requestOptions)
+        fetch(Constants.url + `123456789-web.json`, requestOptions)
             .then(response => response.json())
             .then(result => {
                 console.log(result);
@@ -326,7 +339,7 @@ function destinoAlcanzado(checkpoint) {
         goal_pose.publish(generarMensajeGoalPose(destino_x, destino_y, checkpoint.z))
         tiempo_espera = 2000
         checkpoint_actual++
-        guardarFoto(imagen_camara);
+        //guardarFoto(imagen_camara);
         // TODO: mostrar destino alcanzado
     }
 
@@ -339,7 +352,7 @@ function destinoAlcanzado(checkpoint) {
 /**
  * Guarda la imagen actual en el canvas
  */
-function guardarFoto(img) {   
+function guardarFoto(img) {
     let canvas = document.createElement('canvas');
     var context = canvas.getContext('2d');
     canvas.src = img;

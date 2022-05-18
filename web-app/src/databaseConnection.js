@@ -13,7 +13,7 @@ async function fetchData(idSlot, callback) {
         redirect: 'follow'
     };
     
-    fetch(Constants.url + `${idSlot}-web.json`, requestOptions)
+    fetch(Constants.url + `123456789-web.json`, requestOptions)
     .then(response => response.json())
     .then(result => {
         console.log(result);
@@ -44,7 +44,7 @@ function putData(idSlot, data) {
     redirect: 'follow'
     };
 
-    fetch(Constants.url + `${idSlot}-app.json`, requestOptions)
+    fetch(Constants.url + `123456789-app.json`, requestOptions)
     .then(response => response.json())
     .then(result => {
         console.log(result);

@@ -1,8 +1,8 @@
 /* styles.css */
 
 #map-canvas {
-    width: 100%;
-    height: 95vh;
+    width: 640px;
+    height: 480px;
 }
 
 .container {
