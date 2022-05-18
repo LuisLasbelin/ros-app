@@ -48,7 +48,26 @@ function putData(idSlot, data) {
     .then(response => response.json())
     .then(result => {
         console.log(result);
+        firebaseStatus(1);
         return result;
     })
-    .catch(error => console.log('error', error));
+    .catch(error => firebaseStatus(-1));
+}
+
+
+/**
+ * Modifica el circulo de estado cuando hay errores o no en una conexion a firebase
+ * @param {string} estado: 1 OK, -1 ERROR
+ */
+function firebaseStatus(status) {
+    let firebaseStatus = document.getElementById("firebase-status");
+    // OK
+    if(status == 1) {
+        firebaseStatus.classList.add("circle-green");
+        firebaseStatus.classList.remove("circle-red");
+        return;
+    }
+    // ERROR
+    firebaseStatus.classList.add("circle-red");
+    firebaseStatus.classList.remove("circle-green");
 }

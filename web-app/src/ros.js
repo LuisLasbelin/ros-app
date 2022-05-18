@@ -10,7 +10,7 @@ let conn_data = {
     // ros connection
     ros: null,
     rosbridge_address: 'ws://127.0.0.1:9090/',
-    connected: false,
+    connected: false
 }
 
 //---------TOPICS-----------
@@ -31,6 +31,11 @@ var camera = new ROSLIB.Topic({
     name: '/camera/image_raw',
     messageType: 'sensor_msgs/msg/Image'
 })
+
+// Guarda la imagen actual de la camara
+var imagen_camara = null;
+// Guarda las imagenes hasta que termine la ruta y las envia al final
+var images_data = {};
 
 //---------ROBOS-----------
 let robos_x = 0
@@ -159,42 +164,9 @@ document.addEventListener('DOMContentLoaded', event => {
             let image = new Image();
             image.src = "data:image/jpeg;base64," + msg_data;
             image.onload = function () {
-                let canvas = document.getElementById("map-canvas");
-                let ctx = canvas.getContext("2d");
-                ctx.drawImage(image, 0, 0);
+                imagen_camara = image;
             }
         });
-    }
-
-    /**
-     * Crea el objeto de datos para enviar a Firebase
-     */
-    function sendRosData(data_send) {
-        console.log("Clic en sendROSData")
-
-        idSlot = document.getElementById("id-slot").value; // string
-
-        let jsonMsg = {
-            time: new Date().getTime(),
-            connection_data: conn_data,
-            msg: []
-        }
-        jsonMsg.msg.push(data_send);
-
-        // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
-        document.cookie = "ros_id=" + idSlot + ";";
-
-        putData(idSlot, jsonMsg);
-    }
-    /**
-     * Se desconecta del Robot
-     */
-    function disconnect() {
-        data.ros.close()
-        data.connected = false
-        console.log('Clic en botón de desconexión')
-        // TODO: mostrar que se ha desconectado cambiado el circulo de color y cambiando
-        // de boton desconectar a conectar
     }
     /**
      * Obtiene datos desde firebase
@@ -354,21 +326,55 @@ function destinoAlcanzado(checkpoint) {
         goal_pose.publish(generarMensajeGoalPose(destino_x, destino_y, checkpoint.z))
         tiempo_espera = 2000
         checkpoint_actual++
-        guardarFoto();
+        guardarFoto(imagen_camara);
         // TODO: mostrar destino alcanzado
+    }
 
+    // Si es el ultimo checkpoint envia las fotos a firebase
+    if (checkpoint_actual == checkpoints.length - 1) {
+        sendRosData(images_data);
     }
 }
 
 /**
  * Guarda la imagen actual en el canvas
  */
-function guardarFoto() {
-    let imagen = document.getElementById("map-canvas").getContext().ImageData;
-    if (imagen != "") {
-        let msg_data = {
-            image: imagen
+function guardarFoto(img) {   
+    let canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+    canvas.src = img;
+    canvas.width = image.width;
+    canvas.height = image.height;
+    context.drawImage(this, 0, 0);
+    var dataURL = canvas.toDataURL('image/png');
+    imagen_url = dataURL;
+
+    if (imagen_url != null) {
+        images_data = {
+            images: []
         }
-        sendROSData(msg_data);
+        images_data.images.push(imagen_url);
     }
 }
+
+/**
+ * Crea el objeto de datos para enviar a Firebase
+ */
+function sendRosData(data_send) {
+    console.log("Clic en sendROSData")
+
+    idSlot = document.getElementById("id-slot").value; // string
+
+    let jsonMsg = {
+        time: new Date().getTime(),
+        connection_data: conn_data,
+        msg: []
+    }
+    jsonMsg.msg.push(data_send);
+
+    // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
+    document.cookie = "ros_id=" + idSlot + ";";
+
+    putData(idSlot, jsonMsg);
+}
+
