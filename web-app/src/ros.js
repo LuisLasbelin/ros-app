@@ -36,8 +36,8 @@ var camera = new ROSLIB.Topic({
 let robos_x = 0
 let robos_y = 0
 
-let limite_mapa_x = 2.3
-let limite_mapa_y = 1.9
+let limite_mapa_x = 1.9
+let limite_mapa_y = 2.1
 
 let destino_x = 0
 let destino_y = 0
@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', event => {
 
         goal_pose.ros = conn_data.ros
         odom.ros = conn_data.ros
+        camera.ros = conn_data.ros
 
         // TODO: mostrar que se ha conectado cambiado el circulo de color y cambiando de
         // boton conectar a desconectar
@@ -145,14 +146,14 @@ document.addEventListener('DOMContentLoaded', event => {
         })
 
         odom.subscribe(function (message) {
-            robos_x = message.pose.pose.position.x
-            robos_y = message.pose.pose.position.y
+            robos_x = -message.pose.pose.position.x
+            robos_y = -message.pose.pose.position.y
             //console.log(message)
             dibujar();
         });
         // Dibuja en el canvas la imagen recibida por el topic
         camera.subscribe(function (message) {
-            //console.log(message)
+            console.log(message)
             //console.log(message.data)
             let msg_data = message.data
             let image = new Image();
@@ -175,7 +176,7 @@ document.addEventListener('DOMContentLoaded', event => {
 
         let jsonMsg = {
             time: new Date().getTime(),
-            connection_data: data,
+            connection_data: conn_data,
             msg: []
         }
         jsonMsg.msg.push(data_send);
@@ -198,7 +199,7 @@ document.addEventListener('DOMContentLoaded', event => {
     /**
      * Obtiene datos desde firebase
      */
-    function fetchROSData() {
+    function fetchRosData() {
 
         // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
         document.cookie = "ros_id=" + idSlot + ";";
@@ -253,32 +254,6 @@ document.addEventListener('DOMContentLoaded', event => {
     }
 });
 
-    function fetchRosData() {
-        console.log("Clic en fetchROSData")
-
-        idSlot = document.getElementById("id-slot").value; // string
-
-        // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
-        document.cookie = "ros_id=" + idSlot + ";";
-
-        fetchData(idSlot, startMovement);
-    }
-});
-
-
-// FINAL DOM CONTENT LOADED
-
-function startMovement(jsonData) {
-
-    // Toma los valores del mensaje
-    destino_x = jsonData.msg[0].pose.position.x;
-    destino_y = jsonData.msg[0].pose.position.y;
-    // Crea el mensaje goal pose recibido desde Firebase
-    var mensaje = generarMensajeGoalPose(destino_x,destino_y)
-    goal_pose.publish(mensaje);
-    // Inicia la ruta
-    nextCheckpoint();
-}
 
 /**
  * Genera un mensaje de ROSLIB para el Goal Pose
@@ -374,11 +349,14 @@ function destinoAlcanzado(checkpoint) {
         }
     } else if (checkpoint.tipo == "foto") {
         console.log("foto")
+        destino_x = checkpoint.x / 100 * limite_mapa_x
+        destino_y = checkpoint.y / 100 * limite_mapa_y
+        goal_pose.publish(generarMensajeGoalPose(destino_x, destino_y, checkpoint.z))
         tiempo_espera = 2000
         checkpoint_actual++
         guardarFoto();
         // TODO: mostrar destino alcanzado
-        
+
     }
 }
 
