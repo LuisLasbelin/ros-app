@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <!-- META TAGS -->
-    <title>ROS connection app</title>
-    <meta charset="UTF-8">
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <!-- CORS -->
-    <meta http-equiv="Content-Security-Policy" content="default-src https://*; connect-src
-    *; script-src 'self'; style-src 'self'; img-src *;">
-    <!-- ESTILO -->
-    <link rel="stylesheet" href="styles/bootstrap.min.css">
-    <link href="styles/styles.css" rel="stylesheet">
-    <!-- SCRIPTS -->
-    <script src="node_modules/roslib/build/roslib.js"></script>
-    <script src="src/interaction.js" type="module"></script>
-    <script src="src/ros.js" type="module"></script>
-    
-  </head>
-  <body>
-    <!-- Write a bootstrap layout with two columns-->
+    <head>
+        <!-- META TAGS -->
+        <title>ROS connection app</title>
+        <meta charset="UTF-8">
+        <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+        <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+        <!-- CORS -->
+        <meta http-equiv="Content-Security-Policy" content="default-src https://*; connect-src
+        *; script-src 'self'; style-src 'self'; img-src *;">
+        <!-- ESTILO -->
+        <link rel="stylesheet" href="styles/bootstrap.min.css">
+        <link href="styles/styles.css" rel="stylesheet">
+        <!-- SCRIPTS -->
+        <script src="node_modules/roslib/build/roslib.js"></script>
+        <script src="src/constants.js" type="text/javascript"></script>
+        <script src="src/interaction.js" type="text/javascript"></script>
+        <script src="src/databaseConnection.js" type="text/javascript"></script>
+        <script src="src/utils.js" type="text/javascript"></script>
+        <script src="src/ros.js" type="text/javascript"></script>
+        <script src="src/testImagen.js" type="text/javascript"></script>
+        
+    </head>
+    <body>
     <div class="container">
         <div class="row">
                 <div class="col bg-light">
@@ -40,11 +44,14 @@
                             rx="11" ry="11" class="circle-red" id="map-status"></ellipse></svg>
                         </div>
 
-                        <input type="text" name="idSlot" id="idSlot">
+                        <input type="text" name="idSlot" id="id-slot">
                         
                         <button class="mt-2 btn btn-success"
                         id="btn-con">Conectar</button>
-                        <p id="ros-status"></p>
+                        <button class="mt-2 btn btn-success"
+                        id="btn-send">Enviar datos</button>
+                        <button class="mt-2 btn btn-success"
+                        id="btn-fetch">Descargar datos</button>
                     </div>
                 </div>
                 <div class="col-9">
