@@ -49,6 +49,7 @@ var imagen_camara = null;
 var imagen_anterior = null;
 // Guarda las imagenes hasta que termine la ruta y las envia al final
 var images_data = {};
+var resultado_analisis = "";
 
 //---------ROBOS-----------
 let robos_x = 0
@@ -171,8 +172,24 @@ document.addEventListener('DOMContentLoaded', event => {
             //console.log(message)
             dibujar();
         });
+        // TOPIC RESULTADO IA (analizar)
         resultado.subscribe(function (message) {
             console.log(message)
+
+            switch (message.data) {
+                case message.data[0]:
+                    resultado_analisis = "llave-abierta"
+                    break;
+                case message.data[1]:
+                    resultado_analisis = "llave-cerrada"
+                    break;
+                case message.data[2]:
+                    resultado_analisis = "no-llave"
+                    break;
+                default:
+                console.log("Error al establecer resultado")
+                    break;
+            }
         });
         // Dibuja en el canvas la imagen recibida por el topic
         camera.subscribe(function (message) {
@@ -384,7 +401,11 @@ function guardarFoto(img) {
         images_data = {
             images: []
         }
-        images_data.images.push(imagen_url);
+
+        images_data.images.push({
+            img: imagen_url,
+            label: resultado_analisis
+        });
     }
 }
 
@@ -408,4 +429,3 @@ function sendRosData(data_send) {
 
     putData(idSlot, jsonMsg);
 }
-
