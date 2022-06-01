@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', event => {
         resultado.subscribe(function (message) {
             console.log(message)
 
-            switch (message.data) {
+            switch (JSON.parse(message.data)) {
                 case message.data[0]:
                     resultado_analisis = "llave-abierta"
                     break;
@@ -399,10 +399,10 @@ function guardarFoto(img) {
 
     if (imagen_url != null) {
         images_data = {
-            images: []
+            imagenes: []
         }
 
-        images_data.images.push({
+        images_data.imagenes.push({
             img: imagen_url,
             label: resultado_analisis
         });
