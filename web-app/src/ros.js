@@ -32,6 +32,18 @@ var camera = new ROSLIB.Topic({
     messageType: 'sensor_msgs/msg/Image'
 })
 
+var analizar = new ROSLIB.Topic({
+    ros: null,
+    name: '/analizar',
+    messageType: 'std_msgs/msg/Sting'
+})
+
+var resultado = new ROSLIB.Topic({
+    ros: null,
+    name: '/resultado',
+    messageType: 'std_msgs/msg/Sting'
+})
+
 // Guarda la imagen actual de la camara
 var imagen_camara = null;
 var imagen_anterior = null;
@@ -127,6 +139,8 @@ document.addEventListener('DOMContentLoaded', event => {
         goal_pose.ros = conn_data.ros
         odom.ros = conn_data.ros
         camera.ros = conn_data.ros
+        analizar.ros = conn_data.ros
+        resultado.ros = conn_data.ros
 
         // TODO: mostrar que se ha conectado cambiado el circulo de color y cambiando de
         // boton conectar a desconectar
@@ -156,6 +170,9 @@ document.addEventListener('DOMContentLoaded', event => {
             robos_y = -message.pose.pose.position.y
             //console.log(message)
             dibujar();
+        });
+        resultado.subscribe(function (message) {
+            console.log(message)
         });
         // Dibuja en el canvas la imagen recibida por el topic
         camera.subscribe(function (message) {
@@ -339,6 +356,7 @@ function destinoAlcanzado(checkpoint) {
         goal_pose.publish(generarMensajeGoalPose(destino_x, destino_y, checkpoint.z))
         tiempo_espera = 2000
         checkpoint_actual++
+        analizar.publish({data: "a"})
         //guardarFoto(imagen_camara);
         // TODO: mostrar destino alcanzado
     }
