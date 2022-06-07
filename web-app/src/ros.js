@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', event => {
         resultado.subscribe(function (message) {
             console.log(message)
 
-            switch (message.data) {
+            switch (JSON.parse(message.data)) {
                 case message.data[0]:
                     resultado_analisis = "llave-abierta"
                     break;
@@ -390,11 +390,27 @@ function destinoAlcanzado(checkpoint) {
 /**
  * Guarda la imagen actual en el canvas
  */
+<<<<<<< HEAD
 function guardarFoto(img){
     
     setTimeout(function () {
         if(resultado_analisis == ""){
             guardarFoto(img);
+=======
+function guardarFoto(img) {
+    let canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+    canvas.src = img;
+    canvas.width = image.width;
+    canvas.height = image.height;
+    context.drawImage(this, 0, 0);
+    var dataURL = canvas.toDataURL('image/png');
+    imagen_url = dataURL;
+
+    if (imagen_url != null) {
+        images_data = {
+            imagenes: []
+>>>>>>> 934d93a799a3e4f79e936ec0ce723eb0ff709760
         }
         else {
             let canvas = document.createElement('canvas');
@@ -411,6 +427,7 @@ function guardarFoto(img){
                     images: []
                 }
 
+<<<<<<< HEAD
                 images_data.images.push({
                     img: imagen_url,
                     label: resultado_analisis
@@ -422,6 +439,13 @@ function guardarFoto(img){
             console.log(fotos_hechas + " fotos de " + fotos_necesarias)
         }
     }, 300)
+=======
+        images_data.imagenes.push({
+            img: imagen_url,
+            label: resultado_analisis
+        });
+    }
+>>>>>>> 934d93a799a3e4f79e936ec0ce723eb0ff709760
 }
 
 /**
