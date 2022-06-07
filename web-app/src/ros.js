@@ -68,6 +68,9 @@ let tiempo_espera = 300
 
 let dibujar_disponible = true
 
+var fotos_necesarias = 0;
+var fotos_hechas = 0;
+
 document.addEventListener('DOMContentLoaded', event => {
     console.log("entro en la pagina")
 
@@ -210,9 +213,7 @@ document.addEventListener('DOMContentLoaded', event => {
             }
             ctx.putImageData(image,0,0)
             //console.log(image)
-            image.onload = function () {
-                imagen_canvas = image;
-            }
+            imagen_camara = image;
         });
     }
     /**
@@ -250,6 +251,8 @@ document.addEventListener('DOMContentLoaded', event => {
                             pos.z = z
                             pos.tipo = "foto"
                             checkpoints.push(pos)
+
+                            fotos_necesarias++;
                         }
 
                     });
@@ -374,7 +377,7 @@ function destinoAlcanzado(checkpoint) {
         tiempo_espera = 2000
         checkpoint_actual++
         analizar.publish({data: "a"})
-        //guardarFoto(imagen_camara);
+        guardarFoto(imagen_camara);
         // TODO: mostrar destino alcanzado
     }
 
@@ -387,45 +390,64 @@ function destinoAlcanzado(checkpoint) {
 /**
  * Guarda la imagen actual en el canvas
  */
-function guardarFoto(img) {
-    let canvas = document.createElement('canvas');
-    var context = canvas.getContext('2d');
-    canvas.src = img;
-    canvas.width = image.width;
-    canvas.height = image.height;
-    context.drawImage(this, 0, 0);
-    var dataURL = canvas.toDataURL('image/png');
-    imagen_url = dataURL;
-
-    if (imagen_url != null) {
-        images_data = {
-            images: []
+function guardarFoto(img){
+    
+    setTimeout(function () {
+        if(resultado_analisis == ""){
+            guardarFoto(img);
         }
+        else {
+            let canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
+            canvas.src = img;
+            canvas.width = img.width;
+            canvas.height = img.height;
+            context.putImageData(img, 0, 0);
+            var dataURL = canvas.toDataURL('image/png');
+            imagen_url = dataURL;
 
-        images_data.images.push({
-            img: imagen_url,
-            label: resultado_analisis
-        });
-    }
+            if (imagen_url != null) {
+                images_data = {
+                    images: []
+                }
+
+                images_data.images.push({
+                    img: imagen_url,
+                    label: resultado_analisis
+                });
+
+                resultado_analisis = "";
+            }
+            fotos_hechas++;
+            console.log(fotos_hechas + " fotos de " + fotos_necesarias)
+        }
+    }, 300)
 }
 
 /**
  * Crea el objeto de datos para enviar a Firebase
  */
 function sendRosData(data_send) {
-    console.log("Clic en sendROSData")
+    setTimeout(function() {
+        if(fotos_hechas >= fotos_necesarias) {
+            console.log("Clic en sendROSData")
 
-    idSlot = document.getElementById("id-slot").value; // string
+            idSlot = document.getElementById("id-slot").value; // string
 
-    let jsonMsg = {
-        time: new Date().getTime(),
-        connection_data: conn_data,
-        msg: []
-    }
-    jsonMsg.msg.push(data_send);
+            let jsonMsg = {
+                time: new Date().getTime(),
+                connection_data: conn_data,
+                msg: []
+            }
+            jsonMsg.msg.push(data_send);
 
-    // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
-    document.cookie = "ros_id=" + idSlot + ";";
+            // Guarda cookies con la ID de conexion para no tener que ponerla cada vez
+            document.cookie = "ros_id=" + idSlot + ";";
 
-    putData(idSlot, jsonMsg);
+            putData(idSlot, jsonMsg);
+        } else {
+            sendRosData(data_send);
+        }
+    }, 300)
+    
 }
